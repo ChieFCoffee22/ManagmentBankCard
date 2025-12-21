@@ -50,7 +50,8 @@ class CardNumberMaskerTest {
         String cardNumber = "12345678901234";
         String masked = cardNumberMasker.maskCardNumber(cardNumber);
         
-        assertTrue(masked.contains("3456") || masked.endsWith("3456"));
+        // Для 14-значного номера последние 4 цифры - это "1234"
+        assertTrue(masked.contains("1234") || masked.endsWith("1234"));
     }
 }
 

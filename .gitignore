@@ -4,12 +4,6 @@
 # Log files
 *.log
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
 # Package Files
 *.jar
 *.war
@@ -18,9 +12,6 @@
 *.zip
 *.tar.gz
 *.rar
-
-# Virtual machine crash logs
-hs_err_pid*
 
 # Maven
 target/
@@ -51,18 +42,33 @@ bin/
 .vscode/
 
 # Spring Boot
-spring-boot-*.log
-
-# Database
-*.db
-*.sqlite
+application-local.yml
+application-local.properties
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Application specific
-application-local.yml
-application-dev.yml
-application-prod.yml
+# Database
+*.db
+*.sqlite
+
+# Environment variables
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Logs
+logs/
+*.log.*
+
+
+
+
+
 

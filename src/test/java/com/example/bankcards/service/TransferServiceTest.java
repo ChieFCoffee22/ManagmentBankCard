@@ -72,6 +72,7 @@ class TransferServiceTest {
         fromCard.setStatus(Card.CardStatus.ACTIVE);
         fromCard.setBalance(new BigDecimal("1000.00"));
         fromCard.setExpiryDate(LocalDate.now().plusYears(2));
+        fromCard.setEncryptedCardNumber("encrypted_from");
 
         toCard = new Card();
         toCard.setId(2L);
@@ -79,6 +80,7 @@ class TransferServiceTest {
         toCard.setStatus(Card.CardStatus.ACTIVE);
         toCard.setBalance(new BigDecimal("500.00"));
         toCard.setExpiryDate(LocalDate.now().plusYears(2));
+        toCard.setEncryptedCardNumber("encrypted_to");
 
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -98,8 +100,10 @@ class TransferServiceTest {
         when(cardRepository.findById(2L)).thenReturn(Optional.of(toCard));
         when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(transactionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(cardNumberEncryptor.decrypt(anyString())).thenReturn("1234567890123456");
-        when(cardNumberMasker.maskCardNumber(anyString())).thenReturn("**** **** **** 3456");
+        when(cardNumberEncryptor.decrypt("encrypted_from")).thenReturn("1234567890123456");
+        when(cardNumberEncryptor.decrypt("encrypted_to")).thenReturn("9876543210987654");
+        when(cardNumberMasker.maskCardNumber("1234567890123456")).thenReturn("**** **** **** 3456");
+        when(cardNumberMasker.maskCardNumber("9876543210987654")).thenReturn("**** **** **** 7654");
 
         // Act
         var result = transferService.transferBetweenOwnCards(request);

@@ -12,6 +12,7 @@ import java.util.Base64;
 @Component
 public class CardNumberEncryptor {
     private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
+    private static final String KEY_ALGORITHM = "AES";
     
     private final SecretKey secretKey;
 
@@ -22,9 +23,9 @@ public class CardNumberEncryptor {
             // Если ключ короче, дополняем его
             byte[] extendedKey = new byte[32];
             System.arraycopy(keyBytes, 0, extendedKey, 0, Math.min(keyBytes.length, 32));
-            this.secretKey = new SecretKeySpec(extendedKey, ALGORITHM);
+            this.secretKey = new SecretKeySpec(extendedKey, KEY_ALGORITHM);
         } else {
-            this.secretKey = new SecretKeySpec(keyBytes, 0, 32, ALGORITHM);
+            this.secretKey = new SecretKeySpec(keyBytes, 0, 32, KEY_ALGORITHM);
         }
     }
 

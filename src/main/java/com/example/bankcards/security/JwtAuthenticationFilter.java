@@ -28,6 +28,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        String path = request.getRequestURI();
+        
+        // Пропускаем публичные пути без обработки JWT
+        if (path.startsWith("/api/auth/") || 
+            path.startsWith("/swagger-ui/") || 
+            path.equals("/swagger-ui.html") ||
+            path.startsWith("/v3/api-docs/") || 
+            path.startsWith("/api-docs/") ||
+            path.startsWith("/webjars/") ||
+            path.startsWith("/swagger-resources/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         try {
             String jwt = getJwtFromRequest(request);
 
