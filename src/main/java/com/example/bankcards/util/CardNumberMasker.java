@@ -2,12 +2,21 @@ package com.example.bankcards.util;
 
 import org.springframework.stereotype.Component;
 
+/**
+ * Утилита для маскирования номеров банковских карт.
+ * Скрывает большую часть номера, оставляя видимыми только последние 4 цифры.
+ * 
+ * @author system
+ */
 @Component
 public class CardNumberMasker {
     
     /**
-     * Маскирует номер карты, показывая только последние 4 цифры
-     * Формат: **** **** **** 1234
+     * Маскирует номер карты, показывая только последние 4 цифры.
+     * Формат результата: **** **** **** 1234
+     *
+     * @param cardNumber номер карты для маскирования
+     * @return замаскированный номер карты
      */
     public String maskCardNumber(String cardNumber) {
         if (cardNumber == null || cardNumber.length() < 4) {

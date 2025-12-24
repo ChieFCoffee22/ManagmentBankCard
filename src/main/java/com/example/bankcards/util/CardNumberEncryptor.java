@@ -9,6 +9,12 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+/**
+ * Утилита для шифрования и расшифровки номеров банковских карт.
+ * Использует AES шифрование для защиты чувствительных данных.
+ * 
+ * @author system
+ */
 @Component
 public class CardNumberEncryptor {
     private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
@@ -16,6 +22,12 @@ public class CardNumberEncryptor {
     
     private final SecretKey secretKey;
 
+    /**
+     * Конструктор с инициализацией ключа шифрования.
+     * Использует JWT secret для создания ключа (первые 32 байта).
+     *
+     * @param secret секретный ключ из конфигурации
+     */
     public CardNumberEncryptor(@Value("${jwt.secret:mySecretKeyForJWTTokenGeneration12345678901234567890}") String secret) {
         // Используем JWT secret для создания ключа шифрования (первые 32 байта)
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
@@ -29,6 +41,13 @@ public class CardNumberEncryptor {
         }
     }
 
+    /**
+     * Шифрует номер карты с использованием AES.
+     *
+     * @param cardNumber номер карты в открытом виде
+     * @return зашифрованный номер карты (Base64)
+     * @throws RuntimeException при ошибке шифрования
+     */
     public String encrypt(String cardNumber) {
         try {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
@@ -40,6 +59,13 @@ public class CardNumberEncryptor {
         }
     }
 
+    /**
+     * Расшифровывает номер карты.
+     *
+     * @param encryptedCardNumber зашифрованный номер карты (Base64)
+     * @return номер карты в открытом виде
+     * @throws RuntimeException при ошибке расшифровки
+     */
     public String decrypt(String encryptedCardNumber) {
         try {
             Cipher cipher = Cipher.getInstance(ALGORITHM);

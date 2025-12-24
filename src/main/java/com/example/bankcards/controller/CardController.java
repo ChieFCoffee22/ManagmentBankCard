@@ -11,7 +11,6 @@ import com.example.bankcards.service.TransferService;
 import com.example.bankcards.dto.TransferRequest;
 import com.example.bankcards.dto.TransferResponse;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,19 +22,47 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Контроллер для управления банковскими картами.
+ * Обрабатывает CRUD операции с картами и переводы между картами.
+ * 
+ * @author system
+ */
 @RestController
 @RequestMapping("/api/cards")
 public class CardController {
 
-    @Autowired
-    private CardService cardService;
+    private final CardService cardService;
+    private final TransferService transferService;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private TransferService transferService;
+    /**
+     * Конструктор с внедрением зависимостей.
+     *
+     * @param cardService сервис для работы с картами
+     * @param transferService сервис для переводов между картами
+     * @param userRepository репозиторий пользователей
+     */
+    public CardController(CardService cardService,
+                          TransferService transferService,
+                          UserRepository userRepository) {
+        this.cardService = cardService;
+        this.transferService = transferService;
+        this.userRepository = userRepository;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
-
+    /**
+     * Получает список карт пользователя с фильтрацией и пагинацией.
+     *
+     * @param userId ID пользователя (опционально, по умолчанию текущий пользователь)
+     * @param cardholderName фильтр по имени держателя карты (опционально)
+     * @param status фильтр по статусу карты (опционально)
+     * @param page номер страницы (по умолчанию 0)
+     * @param size размер страницы (по умолчанию 10)
+     * @param sortBy поле для сортировки (по умолчанию "id")
+     * @param sortDir направление сортировки (ASC или DESC, по умолчанию DESC)
+     * @return страница с картами пользователя
+     */
     @GetMapping
     public ResponseEntity<Page<CardResponse>> getMyCards(
             @RequestParam(required = false) Long userId,
@@ -60,18 +87,37 @@ public class CardController {
         return ResponseEntity.ok(cards);
     }
 
+    /**
+     * Получает карту по ID.
+     *
+     * @param id идентификатор карты
+     * @return информация о карте
+     */
     @GetMapping("/{id}")
     public ResponseEntity<CardResponse> getCardById(@PathVariable Long id) {
         CardResponse card = cardService.getCardById(id);
         return ResponseEntity.ok(card);
     }
 
+    /**
+     * Создает новую банковскую карту.
+     *
+     * @param request данные для создания карты
+     * @return созданная карта
+     */
     @PostMapping
     public ResponseEntity<CardResponse> createCard(@Valid @RequestBody CardCreateRequest request) {
         CardResponse card = cardService.createCard(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(card);
     }
 
+    /**
+     * Обновляет статус карты.
+     *
+     * @param id идентификатор карты
+     * @param request новый статус карты
+     * @return обновленная карта
+     */
     @PatchMapping("/{id}/status")
     public ResponseEntity<CardResponse> updateCardStatus(
             @PathVariable Long id,
@@ -80,18 +126,35 @@ public class CardController {
         return ResponseEntity.ok(card);
     }
 
+    /**
+     * Удаляет карту (только для администраторов).
+     *
+     * @param id идентификатор карты
+     * @return пустой ответ со статусом 204
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCard(@PathVariable Long id) {
         cardService.deleteCard(id);
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Выполняет перевод между картами текущего пользователя.
+     *
+     * @param request данные перевода (fromCardId, toCardId, amount)
+     * @return результат перевода
+     */
     @PostMapping("/transfer")
     public ResponseEntity<TransferResponse> transferBetweenCards(@Valid @RequestBody TransferRequest request) {
         TransferResponse response = transferService.transferBetweenOwnCards(request);
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Получает все карты в системе (только для администраторов).
+     *
+     * @return список всех карт
+     */
     @GetMapping("/all")
     public ResponseEntity<List<CardResponse>> getAllCards() {
         List<CardResponse> cards = cardService.getAllCards();

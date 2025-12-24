@@ -21,24 +21,58 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Сервис для выполнения переводов между банковскими картами.
+ * Обеспечивает атомарность операций перевода и проверку бизнес-правил.
+ * 
+ * @author system
+ */
 @Service
 public class TransferService {
 
-    @Autowired
-    private CardRepository cardRepository;
+    private final CardRepository cardRepository;
+    private final CardTransactionRepository transactionRepository;
+    private final UserRepository userRepository;
+    private final CardNumberEncryptor cardNumberEncryptor;
+    private final CardNumberMasker cardNumberMasker;
 
-    @Autowired
-    private CardTransactionRepository transactionRepository;
+    /**
+     * Конструктор с внедрением зависимостей.
+     *
+     * @param cardRepository репозиторий карт
+     * @param transactionRepository репозиторий транзакций
+     * @param userRepository репозиторий пользователей
+     * @param cardNumberEncryptor утилита для шифрования номеров карт
+     * @param cardNumberMasker утилита для маскирования номеров карт
+     */
+    public TransferService(CardRepository cardRepository,
+                          CardTransactionRepository transactionRepository,
+                          UserRepository userRepository,
+                          CardNumberEncryptor cardNumberEncryptor,
+                          CardNumberMasker cardNumberMasker) {
+        this.cardRepository = cardRepository;
+        this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;
+        this.cardNumberEncryptor = cardNumberEncryptor;
+        this.cardNumberMasker = cardNumberMasker;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private CardNumberEncryptor cardNumberEncryptor;
-
-    @Autowired
-    private CardNumberMasker cardNumberMasker;
-
+    /**
+     * Выполняет перевод средств между картами одного пользователя.
+     * Операция атомарна - либо выполняется полностью, либо откатывается.
+     * 
+     * Проверяет:
+     * - принадлежность обеих карт текущему пользователю
+     * - что карты не одинаковые
+     * - статус карт (должны быть ACTIVE)
+     * - срок действия карт
+     * - достаточность баланса на карте-источнике
+     *
+     * @param request данные перевода (fromCardId, toCardId, amount)
+     * @return результат перевода с информацией о транзакции
+     * @throws ForbiddenException если карты не принадлежат текущему пользователю
+     * @throws BadRequestException если нарушены бизнес-правила (недостаточно средств, карта неактивна и т.д.)
+     */
     @Transactional
     public TransferResponse transferBetweenOwnCards(TransferRequest request) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();

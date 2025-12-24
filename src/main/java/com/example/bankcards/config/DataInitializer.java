@@ -12,18 +12,40 @@ import org.springframework.stereotype.Component;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Инициализатор начальных данных.
+ * Создает роли и тестовых пользователей при первом запуске приложения.
+ * 
+ * @author system
+ */
 @Component
 public class DataInitializer implements CommandLineRunner {
 
-    @Autowired
-    private RoleRepository roleRepository;
+    private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UserRepository userRepository;
+    /**
+     * Конструктор с внедрением зависимостей.
+     *
+     * @param roleRepository репозиторий ролей
+     * @param userRepository репозиторий пользователей
+     * @param passwordEncoder кодировщик паролей
+     */
+    public DataInitializer(RoleRepository roleRepository,
+                          UserRepository userRepository,
+                          PasswordEncoder passwordEncoder) {
+        this.roleRepository = roleRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
+    /**
+     * Выполняется при старте приложения.
+     * Создает роли и тестовых пользователей, если их еще нет в БД.
+     *
+     * @param args аргументы командной строки
+     */
     @Override
     public void run(String... args) {
         // Создание ролей

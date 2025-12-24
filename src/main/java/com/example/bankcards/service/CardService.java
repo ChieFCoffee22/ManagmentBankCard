@@ -23,21 +23,49 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для управления банковскими картами.
+ * Реализует бизнес-логику работы с картами: создание, обновление, удаление, получение.
+ * 
+ * @author system
+ */
 @Service
 public class CardService {
 
-    @Autowired
-    private CardRepository cardRepository;
+    private final CardRepository cardRepository;
+    private final UserRepository userRepository;
+    private final CardNumberEncryptor cardNumberEncryptor;
+    private final CardNumberMasker cardNumberMasker;
 
-    @Autowired
-    private UserRepository userRepository;
+    /**
+     * Конструктор с внедрением зависимостей.
+     *
+     * @param cardRepository репозиторий карт
+     * @param userRepository репозиторий пользователей
+     * @param cardNumberEncryptor утилита для шифрования номеров карт
+     * @param cardNumberMasker утилита для маскирования номеров карт
+     */
+    public CardService(CardRepository cardRepository,
+                      UserRepository userRepository,
+                      CardNumberEncryptor cardNumberEncryptor,
+                      CardNumberMasker cardNumberMasker) {
+        this.cardRepository = cardRepository;
+        this.userRepository = userRepository;
+        this.cardNumberEncryptor = cardNumberEncryptor;
+        this.cardNumberMasker = cardNumberMasker;
+    }
 
-    @Autowired
-    private CardNumberEncryptor cardNumberEncryptor;
-
-    @Autowired
-    private CardNumberMasker cardNumberMasker;
-
+    /**
+     * Получает список карт пользователя с фильтрацией и пагинацией.
+     * Обычные пользователи могут видеть только свои карты, администраторы - любые.
+     *
+     * @param userId ID пользователя
+     * @param cardholderName фильтр по имени держателя карты (опционально)
+     * @param status фильтр по статусу карты (опционально)
+     * @param pageable параметры пагинации
+     * @return страница с картами пользователя
+     * @throws ForbiddenException если обычный пользователь пытается посмотреть чужие карты
+     */
     @Transactional(readOnly = true)
     public Page<CardResponse> getAllCardsForUser(Long userId, String cardholderName, Card.CardStatus status, Pageable pageable) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -65,6 +93,15 @@ public class CardService {
         });
     }
 
+    /**
+     * Получает карту по ID.
+     * Обычные пользователи могут получить только свои карты, администраторы - любые.
+     *
+     * @param cardId идентификатор карты
+     * @return информация о карте
+     * @throws ResourceNotFoundException если карта не найдена
+     * @throws ForbiddenException если обычный пользователь пытается получить чужую карту
+     */
     @Transactional(readOnly = true)
     public CardResponse getCardById(Long cardId) {
         Card card = cardRepository.findById(cardId)
@@ -86,6 +123,15 @@ public class CardService {
         return CardResponse.fromCard(card, maskedNumber);
     }
 
+    /**
+     * Создает новую банковскую карту.
+     * Обычные пользователи могут создавать карты только для себя, администраторы - для любого пользователя.
+     *
+     * @param request данные для создания карты
+     * @return созданная карта
+     * @throws BadRequestException если срок действия в прошлом или номер карты уже существует
+     * @throws ForbiddenException если обычный пользователь пытается создать карту для другого пользователя
+     */
     @Transactional
     public CardResponse createCard(CardCreateRequest request) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -130,6 +176,16 @@ public class CardService {
         return CardResponse.fromCard(savedCard, maskedNumber);
     }
 
+    /**
+     * Обновляет статус карты.
+     * Обычные пользователи могут только заблокировать свои карты, администраторы - изменить любой статус.
+     *
+     * @param cardId идентификатор карты
+     * @param request новый статус карты
+     * @return обновленная карта
+     * @throws ResourceNotFoundException если карта не найдена
+     * @throws ForbiddenException если обычный пользователь пытается изменить статус чужой карты или установить статус, отличный от BLOCKED
+     */
     @Transactional
     public CardResponse updateCardStatus(Long cardId, CardStatusUpdateRequest request) {
         Card card = cardRepository.findById(cardId)
@@ -157,6 +213,13 @@ public class CardService {
         return CardResponse.fromCard(updatedCard, maskedNumber);
     }
 
+    /**
+     * Удаляет карту (только для администраторов).
+     *
+     * @param cardId идентификатор карты
+     * @throws ResourceNotFoundException если карта не найдена
+     * @throws ForbiddenException если пользователь не является администратором
+     */
     @Transactional
     public void deleteCard(Long cardId) {
         Card card = cardRepository.findById(cardId)
@@ -174,6 +237,12 @@ public class CardService {
         cardRepository.delete(card);
     }
 
+    /**
+     * Получает все карты в системе (только для администраторов).
+     *
+     * @return список всех карт
+     * @throws ForbiddenException если пользователь не является администратором
+     */
     @Transactional(readOnly = true)
     public List<CardResponse> getAllCards() {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -194,6 +263,13 @@ public class CardService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Находит карту по ID (внутренний метод для использования в других сервисах).
+     *
+     * @param cardId идентификатор карты
+     * @return сущность карты
+     * @throws ResourceNotFoundException если карта не найдена
+     */
     @Transactional(readOnly = true)
     public Card findCardById(Long cardId) {
         return cardRepository.findById(cardId)

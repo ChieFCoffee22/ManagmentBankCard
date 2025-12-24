@@ -6,6 +6,14 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
     <changeSet id="005-create-card-transactions-table" author="system">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="cards"/>
+                <not>
+                    <tableExists tableName="card_transactions"/>
+                </not>
+            </and>
+        </preConditions>
         <createTable tableName="card_transactions">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>

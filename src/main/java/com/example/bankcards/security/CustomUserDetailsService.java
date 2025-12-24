@@ -14,12 +14,33 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация UserDetailsService для Spring Security.
+ * Загружает пользователей из базы данных для аутентификации.
+ * 
+ * @author system
+ */
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
+    /**
+     * Конструктор с внедрением зависимостей.
+     *
+     * @param userRepository репозиторий пользователей
+     */
+    public CustomUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Загружает пользователя по username для Spring Security.
+     *
+     * @param username имя пользователя
+     * @return UserDetails с информацией о пользователе и его ролях
+     * @throws UsernameNotFoundException если пользователь не найден
+     */
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

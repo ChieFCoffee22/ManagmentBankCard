@@ -16,30 +16,65 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для управления пользователями.
+ * Реализует операции поиска, создания и удаления пользователей.
+ * 
+ * @author system
+ */
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private RoleRepository roleRepository;
+    /**
+     * Конструктор с внедрением зависимостей.
+     *
+     * @param userRepository репозиторий пользователей
+     * @param roleRepository репозиторий ролей
+     * @param passwordEncoder кодировщик паролей
+     */
+    public UserService(UserRepository userRepository,
+                      RoleRepository roleRepository,
+                      PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
+    /**
+     * Находит пользователя по username.
+     *
+     * @param username имя пользователя
+     * @return пользователь
+     * @throws ResourceNotFoundException если пользователь не найден
+     */
     @Transactional(readOnly = true)
     public User findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 
+    /**
+     * Находит пользователя по ID.
+     *
+     * @param id идентификатор пользователя
+     * @return пользователь
+     * @throws ResourceNotFoundException если пользователь не найден
+     */
     @Transactional(readOnly = true)
     public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
+    /**
+     * Получает список всех пользователей в системе.
+     *
+     * @return список всех пользователей
+     */
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
@@ -47,6 +82,18 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Создает нового пользователя.
+     *
+     * @param username имя пользователя
+     * @param password пароль (будет захеширован)
+     * @param email email адрес
+     * @param fullName полное имя
+     * @param roleNames набор ролей для пользователя
+     * @return созданный пользователь
+     * @throws BadRequestException если username или email уже существуют
+     * @throws ResourceNotFoundException если роль не найдена
+     */
     @Transactional
     public UserResponse createUser(String username, String password, String email, String fullName, Set<Role.RoleName> roleNames) {
         if (userRepository.existsByUsername(username)) {
@@ -72,6 +119,12 @@ public class UserService {
         return toUserResponse(savedUser);
     }
 
+    /**
+     * Удаляет пользователя по ID.
+     *
+     * @param id идентификатор пользователя
+     * @throws ResourceNotFoundException если пользователь не найден
+     */
     @Transactional
     public void deleteUser(Long id) {
         User user = findById(id);
